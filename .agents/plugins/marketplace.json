@@ -1,0 +1,12 @@
+{
+  "name": "paperpile-stage",
+  "plugins": [
+    {
+      "name": "paperpile-stage",
+      "source": {
+        "source": "local",
+        "path": "./codex"
+      }
+    }
+  ]
+}
