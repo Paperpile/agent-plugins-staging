@@ -46,9 +46,10 @@ from every shared library you can reach, unless you set `include_shared_librarie
 ## Survey the library
 
 `get_collections_from_library` returns every folder and label with its hierarchy, colour and reference
-count. `get_references_from_library` with `random_sample: true`, `limit: 100` and
-`output_format: "JSON"` gives a representative sample including abstracts, which is what tells you what
-the library is actually about.
+count. `get_references_from_library` with `random_sample: true` and `limit: 100` gives a representative
+sample of titles, journals and collections, which is what tells you what the library is actually about.
+Stay on the default `MARKDOWN` output here — the `JSON` sample is several times larger and its extra
+fields do not help a survey.
 
 Then look for: collections with zero references; a large share of papers with no folder; names that
 differ only in spacing or case ("DeepLearning" and "Deep Learning"); and themes in the unsorted papers
@@ -60,8 +61,8 @@ below follows from it. A library with almost no structure wants folders first, t
 ## Propose folders and labels
 
 Read the current structure with `get_collections_from_library`, then sample with
-`get_references_from_library` (`random_sample: true`, `limit: 100`, `output_format: "JSON"`) and pull
-out the recurring research themes, methods and subfields.
+`get_references_from_library` (`random_sample: true`, `limit: 100`) and pull out the recurring research
+themes, methods and subfields.
 
 Propose collections that match how *this* researcher's work divides, not a generic taxonomy. If they
 have thirty papers on transformer architectures and nowhere to put them, that is the gap worth naming.

@@ -2,7 +2,7 @@
   "mcpServers": {
     "paperpile": {
       "type": "http",
-      "url": "https://stage-platform.paperpile.com/mcp"
+      "url": "https://stage-mcp.paperpile.com"
     }
   }
 }

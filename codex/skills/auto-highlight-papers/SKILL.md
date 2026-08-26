@@ -32,10 +32,10 @@ rather than naming them.
 
 Three routes to a paper's text. Pick before you start; switching later wastes a download.
 
-| | `search_library` | `get_text_content` | `paperpile-stage files download` |
-| --- | --- | --- | --- |
-| Gives you | matching passages, with `fileId` and `pageNumber` | text, in the response | `paper.pdf`, `paper.md`, `reference.bib` on disk |
-| Good for | a specific question — it jumps straight to the relevant sections | reading a section in full, quoting | grepping, scripts, handing a file to a subagent |
+|           | `search_library`                                                 | `get_text_content`                 | `paperpile-stage files download`                  |
+| --------- | ---------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------ |
+| Gives you | matching passages, with `fileId` and `pageNumber`                | text, in the response              | `paper.pdf`, `paper.md`, `reference.bib` on disk |
+| Good for  | a specific question — it jumps straight to the relevant sections | reading a section in full, quoting | grepping, scripts, handing a file to a subagent  |
 
 **Start with `search_library` when the focus is specific.** It already searches PDF full text and
 annotations, so a query drawn from the focus area returns the passages themselves rather than papers to
@@ -73,18 +73,19 @@ range in the order given, so a budget too small for the first range leaves the l
 `text: ""` with `result_truncated: true`, which reads like a missing page but is not. Raise
 `max_characters` or ask for fewer ranges.
 
-Each range comes back as `{ range, text, result_truncated }` and nothing else, so the response does not
-tell you how long the document is. Only the first 100 pages are ever extracted: an empty result for a
-high page number means you have run past what exists, or past that cap, and the two are
-indistinguishable from here. Do not report a paper as ending where the text stops.
+Each range comes back as `{ range, text, result_truncated }`, and the response's `total_pages` says how
+many pages the extraction holds. Only the first 100 pages are ever extracted, so a longer document
+reports 100 and the rest cannot be read through this tool — do not report a paper as ending where the
+extraction stops.
 
-Batching is the trick worth knowing: one call can pull page 1 of each of twenty papers, or the six
-passages you located with `search_library`, for the price of one round trip.
+Batching is the trick worth knowing: one call reads one file, but takes up to 50 ranges of it — the six
+passages you located with `search_library`, or a page from each section, for the price of one round
+trip. Reading several papers takes one call per paper.
 
-Character offsets describe *this* extraction only. Never store them, never quote them back to the user,
+Character offsets describe _this_ extraction only. Never store them, never quote them back to the user,
 and never reuse them against a different file. Cite a page number, or leave a highlight.
 
-## Downloading with the CLI
+## The Paperpile CLI
 
 The Paperpile CLI is a single binary with no runtime dependencies.
 
@@ -110,8 +111,9 @@ Download by citekey, repeating the flag for each paper — at most 50 per call:
 paperpile-stage files download --citekey smith2023method --citekey jones2024result --to ./papers
 ```
 
-`--reference-id` names a paper by id instead. `--library` targets a shared library. `--no-markdown` and
-`--no-bibtex` drop what you do not need; `--supplementary` adds the non-primary attachments.
+Ask the binary for the rest rather than guessing: `paperpile-stage files download --help` for its other
+flags, `paperpile-stage --help` for every command — it also manages references, folders, labels and file
+uploads. The installed binary may be a different version to this skill, so its help is the authority.
 
 It writes one folder per reference:
 

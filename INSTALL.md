@@ -44,4 +44,4 @@ You need a Paperpile account. The plugin signs in through your browser; no API k
 
 ---
 
-Version 0.1.0 · talks to `https://stage-platform.paperpile.com`
+Version 0.2.0 · REST `https://stage-api.paperpile.com` · MCP `https://stage-mcp.paperpile.com`

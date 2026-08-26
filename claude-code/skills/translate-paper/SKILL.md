@@ -29,9 +29,9 @@ paperpile-stage files download --citekey [citekey] --to ./papers
 
 `paper.md` in the reference's folder is the source text.
 
-If the paper has no PDF, say so and stop. You cannot supply one: nothing in the toolset uploads a file,
-so a PDF sitting on the user's disk is of no use here. They attach it themselves from the Paperpile app
-or the browser extension, and the download works on the next attempt.
+If the paper has no PDF, say so. A PDF on the user's disk can be attached with
+`paperpile-stage files upload <path> --reference-id <id> --primary`; otherwise they attach it themselves
+from the Paperpile app or the browser extension. Either way the download works on the next attempt.
 
 ## 3. Plan the translation
 

@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "paperpile": {
-      "serverUrl": "https://stage-platform.paperpile.com/mcp"
+      "serverUrl": "https://stage-mcp.paperpile.com"
     }
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "paperpile-stage",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Search the academic literature, save papers to your Paperpile library, read and annotate their full text, and keep the library organised.",
   "homepage": "https://paperpile.com",
   "author": { "name": "Paperpile" },
