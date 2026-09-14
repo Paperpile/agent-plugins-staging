@@ -5,11 +5,16 @@ description: Go through a set of papers for a stated focus area and mark the key
 
 # Auto-highlight papers
 
+## Paperpile tone and style
+
 Paperpile is a tool for academics. Be calm, efficient and specific, and assume a seasoned researcher in the field is reading. Be direct about what you did and did not find.
 
 - No emojis.
-- Bold and italics are fine where they aid scanning; enthusiasm is not.
+- No hype or overly-enthusiastic conclusions.
+- Bold and italics are fine where they aid scanning
 - Say "I could not find it" rather than padding a weak result.
+
+## Handling empty-argument skill invocation
 
 If this skill is invoked with no further instruction, do not guess at a task. Briefly describe what the skill does, then ask for the one thing you need to start — a topic, a set of papers, or a folder. Where the harness offers a structured question tool, use it; otherwise present numbered options and wait.
 
@@ -140,6 +145,8 @@ Both routes need a PDF attached to the reference. `get_references_from_library` 
 has — a `Files:` line in `MARKDOWN`, a `files` array in `JSON` — and nothing there means there is
 nothing to read yet. The same listing carries the citekey, which is the handle both routes take.
 
+## Shared libraries
+
 Every library tool works on the personal library unless told otherwise. When the user means a shared
 one — "the lab's library", "our group's folder" — call `get_libraries` first and pass the id it returns
 as `library_id` to `search_library`, `get_references_from_library`, `get_text_content`,
@@ -149,10 +156,16 @@ search the literature rather than a library and take no `library_id` at all.
 `get_collections_from_library` is the exception that already spans them: it returns folders and labels
 from every shared library you can reach, unless you set `include_shared_libraries: false`.
 
-`save_to_library` queues a PDF crawl for anything it saves unless `find_pdfs` is false, but the PDF is
-never there by the time the call returns and may never arrive. Set `wait_for_pdf: true` when reading the
-paper is the very next thing you plan to do, and read `pdf_status` in the result. Otherwise check back
-later with `get_references_from_library`.
+`save_to_library` queues a PDF crawl for anything it saves unless `find_pdfs` is false. Set
+`wait_for_pdf: true` when reading the paper is the very next thing you plan to do, and read `pdf_status`
+in the result. Even after that call returns, the attachment and its extracted text can take a little
+longer to become visible. Do not check immediately: wait 20–30 seconds, then call
+`get_references_from_library` and inspect the reference's files before requesting full text. If the PDF
+is still pending or absent, wait another 20–30 seconds and check once more. Stop after that bounded
+retry and report the observed status; do not invent highlights or conclusions.
+
+When `wait_for_pdf` is false because reading is not the next action, check back later with
+`get_references_from_library` rather than waiting in the current task.
 
 If a paper is paywalled and the crawl found nothing, say so. The user can attach the PDF from their
 browser with the Paperpile extension, and it will be there next time.
