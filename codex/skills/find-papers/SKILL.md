@@ -23,7 +23,7 @@ If this skill is invoked with no further instruction, do not guess at a task. Br
 Every library tool works on the personal library unless told otherwise. When the user means a shared
 one — "the lab's library", "our group's folder" — call `get_libraries` first and pass the id it returns
 as `library_id` to `search_library`, `get_references_from_library`, `get_text_content`,
-`highlight_text`, `save_to_library`, `update_references` or `update_collections`. The catalog tools
+`highlight_text`, `save_to_library`, `find_pdfs_for_references`, `update_references` or `update_collections`. The catalog tools
 search the literature rather than a library and take no `library_id` at all.
 
 `get_collections_from_library` is the exception that already spans them: it returns folders and labels
@@ -33,20 +33,32 @@ from every shared library you can reach, unless you set `include_shared_librarie
 
 Whenever you present a paper to the user, use this four-line block. It is the format Paperpile users recognise, and it stays scannable in a terminal.
 
+For a paper in the user's Paperpile library:
+
+```
+**Title**\
+Author1 LN, Author2 LN, Author3 LN\
+*Journal Abbrev* · Year · Article type\
+[DOI] · [View in library] · [View PDF]
+```
+
+For an external catalog result (not in the user's library):
+
 ```
 **Title**\
 Author1 LN, Author2 LN, Author3 LN\
 *Journal Abbrev* · Year · Article type · N,NNN citations\
-[Canonical link] · [View PDF link]
+https://doi.org/10.1000/xyz123
 ```
 
 - **Title** — the full canonical title, bold.
 - **Authors** — `Last F` or `Last FM`, no periods, comma separated. Show all of them up to five; beyond that show the first three, then `... N more ...`, then the last two. Consortium and working-group names are never abbreviated.
-- **Metadata** — journal in italics using its NLM abbreviation (single-word titles are never abbreviated: *Nature*, *Science*, *Cell*, *eLife*), then year, then article type (`Journal article`, `Review`, `Preprint`, `Book chapter`), then the citation count with a thousands separator. Separate the fields with ` · `. Omit any field you do not have rather than guessing it — never print `0` or `N/A`. The article type comes from the reference's `type`: library results carry it in `MARKDOWN`, catalog results only in `JSON`.
-- **Canonical link** — A link to the canonical publisher or preprint URL. Prefer the `https://doi.org/...` DOI link if available; otherwise, a preprint or PubMed link is acceptable. Use a Markdown link, with the anchor text one of the following: Website, PubMed, arXiv.
-- **View PDF link** - For references in the user's Paperpile library with a main article PDF, include a PDF viewer link with the format `https://stage-beta.paperpile.com/view/?id=[file_id]`, where file_id is the Paperpile file ID. Make a `get_references_from_library` call with the citekey to get full metadata if the article PDF status is not known.
-
-the canonical `https://doi.org/…` URL as a Markdown link. An arXiv preprint from the last three months may not have reached the DOI resolver yet; use its `https://arxiv.org/abs/…` URL instead. Drop the line if there is neither.
+- **Metadata** — journal in italics using its NLM abbreviation (single-word titles are never abbreviated: *Nature*, *Science*, *Cell*, *eLife*), then year, then article type (`Journal article`, `Review`, `Preprint`, `Book chapter`), then the citation count with a thousands separator (when available; library records usually do not include citation counts unless looked up separately). Separate the fields with ` · `. Omit any field you do not have rather than guessing it — never print `0` or `N/A`.
+- **Links (library papers)** — Join the available Markdown links with ` · ` in this order:
+  1. `[DOI](https://doi.org/...)` (or if the reference has no DOI: `[arXiv](https://arxiv.org/abs/...)`, `[PubMed](https://pubmed.ncbi.nlm.nih.gov/.../)`, or `[URL](...)`).
+  2. `[View in library](...)` using the `library_url` returned by the Paperpile library tools (`https://stage-beta.paperpile.com/my-library/...` or the shared library equivalent).
+  3. `[View PDF](...)` using the viewer link (`https://stage-beta.paperpile.com/view/?id=[file_id]`, plus `&library=[library_id]` for shared libraries) when the reference has a main article PDF. Make a `get_references_from_library` call with the citekey if the article PDF status is not known.
+- **Links (external catalog papers)** — A single raw URL on its own line (not a Markdown link): prefer the canonical `https://doi.org/…` URL. An arXiv preprint from the last three months may not have reached the DOI resolver yet; use its `https://arxiv.org/abs/…` URL instead, or a fallback PubMed/publisher URL. Drop the line if there is no URL.
 
 Put `---` before the first entry and after the last. Separators between entries are optional — use them when the list is long enough to need the visual break.
 
@@ -57,17 +69,13 @@ A comment about a paper goes on its own line after the link, as a `-` bullet.
 
 **Eleven grand challenges in single-cell data science**\
 Lähnemann D, Köster J, Szczurek E ... 14 more ... Schönhuth A, Rahmann S, Schreiber S\
-*Genome Biol* · 2020 · Review · 1,098 citations\
-[Website] · [View PDF]
+*Genome Biol* · 2020 · Review\
+[DOI](https://doi.org/10.1186/s13059-020-1926-6) · [View in library](https://stage-beta.paperpile.com/my-library/Lahnemann2020-sc-p...) · [View PDF](https://stage-beta.paperpile.com/view/?id=...)
 
 - Frames the field's open problems; useful as an anchor for anything downstream of scRNA-seq.
 
 ---
 ```
-
-### Note: citation counts
-
-If you are presenting a small number of papers to the user and you don't already have citation counts available, you can make a quick call to `find_papers` with the DOI of each paper in the query_list to get citation counts.
 
 ## Library or literature
 
@@ -91,11 +99,10 @@ substitute one for the other.
 
 ## The tools
 
-All of these except `search_library` take `output_format`: `MARKDOWN` (default, compact prose), `JSON`
-(full metadata including abstracts — ask for it when you need to read fields), `MINIMAL` (one line per
-paper, for scanning a long list). `search_library` has no such parameter and always renders one way —
-do not pass it one, since its schema declares no other properties and a client that checks will reject
-the whole call.
+These search and reference tools take `output_format`: `MARKDOWN` (default, compact reference cards),
+`JSON` (structured metadata — ask for it when you need to read fields), and `MINIMAL` (one line per
+paper, or per matching passage for `search_library`). Catalog and reference JSON includes full metadata;
+library-search JSON includes concise citation metadata and all returned matches.
 
 ### find_papers
 
@@ -142,18 +149,23 @@ Narrow with `folder_id` or `label_id` (one or the other, never both). Set `searc
 search metadata only, which is the fix for a query that drags in every paper that merely mentions the
 term in its PDF — but drop any `pdf:` clause at the same time, or the call is rejected.
 
-It does not return a list of papers. It returns a flat list of _matches_ under `data`, so one paper can
-appear several times — once for its metadata and once per passage found in its PDF. Group by
-`referenceId` before you present anything, or you will report the same paper repeatedly.
+`MARKDOWN` groups all returned matches under a reference card with citation metadata and file IDs.
+`MINIMAL` gives one line per match with the citekey, location and excerpt, omitting file IDs. `JSON`
+returns `data: [{ reference, matches }]`: `reference.id` identifies the paper, and its citation metadata
+is separate from the highlighted matches. Batched queries return `{ results: [...] }` in input order.
+Citation summaries use `published` for the publication date and `files` for attachment objects, as in
+reference-list responses. The `primary` file is the main article PDF.
 
-Each row carries a `resultType`, and the fields are camelCase here, unlike the snake_case parameters:
+Each JSON match carries a `resultType`, and the fields are camelCase here, unlike the snake_case parameters:
 
 - `reference_metadata` — matched on title, authors, year, journal or abstract; `matchedFields` says which.
-- `fulltext` — matched inside the PDF. Carries `snippet`, `fileId` and `pageNumber`.
-- `pdf_annotation` — matched in a highlight or note. Same, plus `annotationId`.
+- `fulltext` — matched inside the PDF. Carries `snippet`, `fileId`, `pageNumber`, and UTF-8 `charOffsets`.
+  Take fulltext results and send to `get_text_content` with `{ page, start, end }` to get the surrounding context.
+- `pdf_annotation` — matched in a highlight or note. Carries `snippet`, `fileId`, `pageNumber`, and `annotationId`; read the whole page with `get_text_content` for more context.
 
-The matched terms come back wrapped in `**` inside `snippet`. `total` counts matching references only
-when `count` asks for it; `resultCount` is the number of rows returned.
+The matched terms come back wrapped in `**` inside `snippet` and metadata match fields. `total` counts
+matching references across all pages when `count` asks for it; `resultCount` counts returned matches,
+and `referenceCount` counts distinct references on this page. Count-only calls return no match cards.
 
 Those `fileId` and `pageNumber` values are the useful part: they hand straight to `get_text_content`
 (read the surrounding pages) or `highlight_text` (mark the passage), so a full-text search is the
@@ -329,3 +341,7 @@ Unless the user said what happens next, offer it:
    surface supports scheduling (load `scheduled-paper-search` before offering to create one)
 6. **Find the citation gaps** — when the papers sit in a coherent folder, or the user has a few clear
    anchors, offer the co-citation pass above: what these papers all build on that is not yet saved.
+
+## Feedback
+
+We welcome feedback on Paperpile's tools and skills. To report a bug, friction in a workflow, a feature request, or something that worked well, use the `send_paperpile_feedback` tool — or humans can email support@paperpile.com directly.

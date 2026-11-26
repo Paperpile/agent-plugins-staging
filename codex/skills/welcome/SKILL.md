@@ -22,13 +22,13 @@ Otherwise, present the user with a brief introduction to "Paperpile for Codex". 
 
 [Short sentence describing what Paperpile for Codex does: allows you to use your agent to work with Paperpile more efficiently. Find papers online, interact with your library, analyze full-text manuscripts, etc.]
 
-[Provide a bullet-point list of the main skills available in the Paperpile plugin: find-papers, organize-paper-library, scheduled-paper-search, deep-library-search. Each should contain a short (< 10 word) summary of what can be done with the skill. Describe scheduled-paper-search as available only on supported desktop surfaces; its own workflow determines whether the current surface qualifies.]
-
-[A non-bullet point sentence listing other skills available: narrative-paper-survey, auto-highlight-papers, translate-paper.]
+[Provide a bullet-point list of the main skills available in the Paperpile plugin: find-papers, deep-library-search, organize-paper-library, scheduled-paper-search, narrative-paper-survey, translate-paper, auto-highlight-papers, extract-paper-data. Each should contain a short (< 10 word) summary of what can be done with the skill. Describe scheduled-paper-search as available only on supported desktop surfaces; its own workflow determines whether the current surface qualifies.]
 
 [Mention that beyond the guided workflows above, Paperpile provides more fine-grained MCP tools that your agent can use individually to interact with Paperpile. Mention the user can always ask for the list of Paperpile MCP tools.]
 
 [Offer a short list of potential next steps for the user. Use the conversational context to suggest relevant next steps. Absent any direction, suggest find-papers as a good way to start. Or ask the user what's their current research goal, then suggest appropriate next steps.]
+
+[At the end, briefly mention that the user can share feedback, bug reports, or feature requests with the Paperpile team at any time using the `send-paperpile-feedback` skill or by emailing support@paperpile.com.]
 
 </End: welcome message template>
 

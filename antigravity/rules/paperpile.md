@@ -14,6 +14,7 @@ schemas alone:
 - `narrative-paper-survey` — Write a short narrative survey that ties together a specific set of papers — how the ideas developed and how the papers relate — introducing each paper formatted as a full Paperpile citation. Use when the user asks for an overview, a mini literature review, or the story of a field.
 - `organize-paper-library` — Organize the papers in your Paperpile library. Provides a guided workflow to file unsorted papers into folders and labels, propose a folder structure that fits what is actually in the library, and clean up empty or duplicated collections. Use when the user asks to tidy, sort, categorize or restructure their library.
 - `scheduled-paper-search` — Set up a supported scheduled task that periodically searches for new citations or related articles, analyzes or organizes new results, and saves them for later reading. Use when the user wants a recurring paper search, including when the current product surface may not support scheduling.
+- `send-paperpile-feedback` — Send a bug report, friction log, feature request, testimonial, or general feedback to the Paperpile team. Use when the user wants to share feedback about Paperpile's tools or skills, or invokes this with no instruction of their own.
 - `translate-paper` — Translate a paper's full text from one language into another, preserving equations, citations and structure. Use when the user asks to translate a paper, an abstract or a section of one.
 
 For anything the workflows do not cover, call the `paperpile` MCP tools directly.

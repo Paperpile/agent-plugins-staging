@@ -23,7 +23,7 @@ If this skill is invoked with no further instruction, do not guess at a task. Br
 Every library tool works on the personal library unless told otherwise. When the user means a shared
 one — "the lab's library", "our group's folder" — call `get_libraries` first and pass the id it returns
 as `library_id` to `search_library`, `get_references_from_library`, `get_text_content`,
-`highlight_text`, `save_to_library`, `update_references` or `update_collections`. The catalog tools
+`highlight_text`, `save_to_library`, `find_pdfs_for_references`, `update_references` or `update_collections`. The catalog tools
 search the literature rather than a library and take no `library_id` at all.
 
 `get_collections_from_library` is the exception that already spans them: it returns folders and labels
@@ -55,8 +55,10 @@ Highlight that no modifications will occur without approval.
 
 ### Analyze library structure and make recommendations
 
-`get_collections_from_library` returns every folder and label with its hierarchy, colour and reference
-count. `get_references_from_library` with `random_sample: true` and `limit: 100` gives a representative
+`get_collections_from_library` returns every folder and label with its hierarchy, colour, reference
+count, and a `View in library` link (`library_url`). When naming existing or newly created folders and
+labels to the user, link them with their `library_url` so the user can open them directly in Paperpile.
+`get_references_from_library` with `random_sample: true` and `limit: 100` gives a representative
 sample of titles, journals and collections, which is what tells you what the library is actually about.
 Stay on the default `MARKDOWN` output here — the `JSON` sample is several times larger and its extra
 fields do not help a survey.
@@ -178,3 +180,7 @@ Use your own judgement and call the tools directly. Do not write a script for th
 `organize-paper-library`.
 
 <End: subagent envelope>
+
+## Feedback
+
+We welcome feedback on Paperpile's tools and skills. To report a bug, friction in a workflow, a feature request, or something that worked well, use the `send_paperpile_feedback` tool — or humans can email support@paperpile.com directly.

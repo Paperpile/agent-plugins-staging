@@ -52,16 +52,16 @@ Before exiting this step, you MUST have a clear understanding of how to reproduc
 Confirm the search strategy and parameters with the user before proceeding: use the following template (slight modifications are allowed).
 Text in square braces is commentary or guidance; it should be removed or replaced as appropriate.
 
- <Begin: search strategy template>
- Goal: [Brief description of the searh goal]
+<Begin: search strategy template>
+Goal: [Brief description of the search goal]
 
- [Include one or more of the following, depending on the user's stated criteria:]
- Keywords: [keywords to be included in the search, if any]
- Authors: [author(s) that will be included in the search, if any]
- Anchor paper(s): [author-year strings for papers that will ground the search, if any]
+[Include one or more of the following, depending on the user's stated criteria:]
+Keywords: [keywords to be included in the search, if any]
+Authors: [author(s) that will be included in the search, if any]
+Anchor paper(s): [author-year strings for papers that will ground the search, if any]
 
- Frequency: [daily / weekly / monthly]
- <Eng: search strategy template>
+Frequency: [daily / weekly / monthly]
+<End: search strategy template>
 
 Work with the user to define the specific search criteria and patterns; load the `find-papers` skill for more details on search strategy and
 how to best orchestrate Paperpile's literature search tools.
@@ -72,15 +72,19 @@ The user may choose between the following options for defining what action shoul
 
 1. Save to my library (Default). Save new references to your library, organized with an appropriate folder or label.
    Oftentimes, it makes sense to have the scheduled search apply some pre-screening or discretion to search results before saving.
-   Be explicit about what instructions the scheduled search will be provided, and confirm with the user.
+   Be explicit about what instructions the scheduled search will be provided, and confirm with the user. When the scheduled search agent
+   saves references to the user's library, it should list the saved references using the standard Paperpile reference format, including
+   links to view the PDF, if available, in Paperpile.
 2. Save and analyze. Save new references to your library, as above, then analyze the full text to construct a short Markdown note
    to save in the `note` field, and also highlight quotes within the PDF that are directly relevant to the user's interest. This approach
    costs more tokens, but presents the user with more pre-screened context.
    If this option is selected, the scheduled task should load the `auto-highlight-papers` skill to proceed.
-   Its prompt must say to save with `wait_for_pdf: true`, wait 20–30 seconds after each save returns
-   before checking the reference for an attached PDF, and make at most one further check after another
-   20–30-second wait. A scheduled run must retain the citation and record the observed blocker when no
-   extractable PDF appears; it must not invent highlights or full-text conclusions.
+   Its prompt must say that `save_to_library` already waits for the PDF crawl and reports each
+   reference's outcome in `pdf_crawl`: `none_found`, `restricted`, `blocked` and `error` are final.
+   A reference still `pending` gets one further check 20–30 seconds later, unless its `stage` is
+   `awaiting_client`, which means no Paperpile browser extension is online to crawl it. A scheduled run
+   must retain the citation and record the observed blocker when no extractable PDF appears; it must not
+   invent highlights or full-text conclusions.
 3. Save to a shared library. Users may indicate a shared library they want to save new results to.
 4. Something else. If the user wants a different action to be performed, they can describe it here.
 
@@ -91,10 +95,17 @@ Using the appropriate platform-provided tool, create a scheduled task that will 
 The task should be asked to first load the `scheduled-paper-search` skill, so it has access to the same information and guidance used to create
 the task.
 
-It should also be guided to save a text file with "seen" DOIs in a known persistent location, so the scheduled search agent can easily check
-whether a given article is new or has been seen before and not saved to the user's library.
+It should also be guided to save a text file with "seen" DOIs in a known persistent location on the user's hard drive or in accessible project space,
+so the scheduled search agent can easily check whether a given article is new or has been seen before and not saved to the user's library. IMPORTANT: this
+file with "Seen" DOIs should _not_ be stored in the user's Paperpile library. If computer-local storage is not an option, then it should just not save
+prior "seen" results, and accept that there may be duplicate save attempts, and wasted effort. (But Paperpile will prevent duplicate references from appearing
+in the user's library.)
 
 Provide the user a summary of the specific prompt that will be provided to the platform-provided scheduling tool. The user must approve before you
 create the scheduled task.
 
 If allowed by the platform, ask the user if they would like the tool to be triggered immediately in order to assess its behavior.
+
+## Feedback
+
+We welcome feedback on Paperpile's tools and skills. To report a bug, friction in a workflow, a feature request, or something that worked well, use the `send_paperpile_feedback` tool — or humans can email support@paperpile.com directly.

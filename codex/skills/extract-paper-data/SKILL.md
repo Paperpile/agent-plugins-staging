@@ -25,20 +25,32 @@ If this skill is invoked with no further instruction, do not guess at a task. Br
 
 Whenever you present a paper to the user, use this four-line block. It is the format Paperpile users recognise, and it stays scannable in a terminal.
 
+For a paper in the user's Paperpile library:
+
+```
+**Title**\
+Author1 LN, Author2 LN, Author3 LN\
+*Journal Abbrev* · Year · Article type\
+[DOI] · [View in library] · [View PDF]
+```
+
+For an external catalog result (not in the user's library):
+
 ```
 **Title**\
 Author1 LN, Author2 LN, Author3 LN\
 *Journal Abbrev* · Year · Article type · N,NNN citations\
-[Canonical link] · [View PDF link]
+https://doi.org/10.1000/xyz123
 ```
 
 - **Title** — the full canonical title, bold.
 - **Authors** — `Last F` or `Last FM`, no periods, comma separated. Show all of them up to five; beyond that show the first three, then `... N more ...`, then the last two. Consortium and working-group names are never abbreviated.
-- **Metadata** — journal in italics using its NLM abbreviation (single-word titles are never abbreviated: *Nature*, *Science*, *Cell*, *eLife*), then year, then article type (`Journal article`, `Review`, `Preprint`, `Book chapter`), then the citation count with a thousands separator. Separate the fields with ` · `. Omit any field you do not have rather than guessing it — never print `0` or `N/A`. The article type comes from the reference's `type`: library results carry it in `MARKDOWN`, catalog results only in `JSON`.
-- **Canonical link** — A link to the canonical publisher or preprint URL. Prefer the `https://doi.org/...` DOI link if available; otherwise, a preprint or PubMed link is acceptable. Use a Markdown link, with the anchor text one of the following: Website, PubMed, arXiv.
-- **View PDF link** - For references in the user's Paperpile library with a main article PDF, include a PDF viewer link with the format `https://stage-beta.paperpile.com/view/?id=[file_id]`, where file_id is the Paperpile file ID. Make a `get_references_from_library` call with the citekey to get full metadata if the article PDF status is not known.
-
-the canonical `https://doi.org/…` URL as a Markdown link. An arXiv preprint from the last three months may not have reached the DOI resolver yet; use its `https://arxiv.org/abs/…` URL instead. Drop the line if there is neither.
+- **Metadata** — journal in italics using its NLM abbreviation (single-word titles are never abbreviated: *Nature*, *Science*, *Cell*, *eLife*), then year, then article type (`Journal article`, `Review`, `Preprint`, `Book chapter`), then the citation count with a thousands separator (when available; library records usually do not include citation counts unless looked up separately). Separate the fields with ` · `. Omit any field you do not have rather than guessing it — never print `0` or `N/A`.
+- **Links (library papers)** — Join the available Markdown links with ` · ` in this order:
+  1. `[DOI](https://doi.org/...)` (or if the reference has no DOI: `[arXiv](https://arxiv.org/abs/...)`, `[PubMed](https://pubmed.ncbi.nlm.nih.gov/.../)`, or `[URL](...)`).
+  2. `[View in library](...)` using the `library_url` returned by the Paperpile library tools (`https://stage-beta.paperpile.com/my-library/...` or the shared library equivalent).
+  3. `[View PDF](...)` using the viewer link (`https://stage-beta.paperpile.com/view/?id=[file_id]`, plus `&library=[library_id]` for shared libraries) when the reference has a main article PDF. Make a `get_references_from_library` call with the citekey if the article PDF status is not known.
+- **Links (external catalog papers)** — A single raw URL on its own line (not a Markdown link): prefer the canonical `https://doi.org/…` URL. An arXiv preprint from the last three months may not have reached the DOI resolver yet; use its `https://arxiv.org/abs/…` URL instead, or a fallback PubMed/publisher URL. Drop the line if there is no URL.
 
 Put `---` before the first entry and after the last. Separators between entries are optional — use them when the list is long enough to need the visual break.
 
@@ -49,17 +61,13 @@ A comment about a paper goes on its own line after the link, as a `-` bullet.
 
 **Eleven grand challenges in single-cell data science**\
 Lähnemann D, Köster J, Szczurek E ... 14 more ... Schönhuth A, Rahmann S, Schreiber S\
-*Genome Biol* · 2020 · Review · 1,098 citations\
-[Website] · [View PDF]
+*Genome Biol* · 2020 · Review\
+[DOI](https://doi.org/10.1186/s13059-020-1926-6) · [View in library](https://stage-beta.paperpile.com/my-library/Lahnemann2020-sc-p...) · [View PDF](https://stage-beta.paperpile.com/view/?id=...)
 
 - Frames the field's open problems; useful as an anchor for anything downstream of scRNA-seq.
 
 ---
 ```
-
-### Note: citation counts
-
-If you are presenting a small number of papers to the user and you don't already have citation counts available, you can make a quick call to `find_papers` with the DOI of each paper in the query_list to get citation counts.
 
 ## Paperpile PDF links
 
@@ -263,11 +271,11 @@ A `fulltext` hit carries `snippet`, `pageNumber` and `fileId` — what a Paperpi
 `highlight_text` and `get_text_content` all take.
 
 **Read around the hit before relying on it.** The surrounding sentence can reverse a snippet's meaning,
-so pass the pages the search returned to `get_text_content` before quoting it. One call takes up to 50
-page ranges, so batch every passage you located into a single round trip.
+so fetch an expanded region around the snippet (start with a few hundred bytes on each side) to gain more context. Take the `pageNumber` and `charOffsets` from a search result and pass to `get_text_content` as `{ page, start, end }`. Clamp the widened `start` at zero; a negative `start` is rejected.
 
 Read a paper front to back only when that is the job, or when search comes up empty: no extractable
-text, or an answer spread across a whole section.
+text, or an answer spread across a whole section. If a reference in the library has no PDF attached yet,
+call `find_pdfs_for_references` to trigger a PDF crawl before giving up on full text.
 
 ### Use subagents for many papers
 
@@ -434,3 +442,7 @@ paper is read against the same definition.]
 
 `[scratch_dir]`
 <End: subagent envelope>
+
+## Feedback
+
+We welcome feedback on Paperpile's tools and skills. To report a bug, friction in a workflow, a feature request, or something that worked well, use the `send_paperpile_feedback` tool — or humans can email support@paperpile.com directly.

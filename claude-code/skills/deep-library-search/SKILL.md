@@ -34,7 +34,7 @@ If this skill is invoked with no further instruction, do not guess at a task. Br
 Every library tool works on the personal library unless told otherwise. When the user means a shared
 one — "the lab's library", "our group's folder" — call `get_libraries` first and pass the id it returns
 as `library_id` to `search_library`, `get_references_from_library`, `get_text_content`,
-`highlight_text`, `save_to_library`, `update_references` or `update_collections`. The catalog tools
+`highlight_text`, `save_to_library`, `find_pdfs_for_references`, `update_references` or `update_collections`. The catalog tools
 search the literature rather than a library and take no `library_id` at all.
 
 `get_collections_from_library` is the exception that already spans them: it returns folders and labels
@@ -44,20 +44,32 @@ from every shared library you can reach, unless you set `include_shared_librarie
 
 Whenever you present a paper to the user, use this four-line block. It is the format Paperpile users recognise, and it stays scannable in a terminal.
 
+For a paper in the user's Paperpile library:
+
+```
+**Title**\
+Author1 LN, Author2 LN, Author3 LN\
+*Journal Abbrev* · Year · Article type\
+[DOI] · [View in library] · [View PDF]
+```
+
+For an external catalog result (not in the user's library):
+
 ```
 **Title**\
 Author1 LN, Author2 LN, Author3 LN\
 *Journal Abbrev* · Year · Article type · N,NNN citations\
-[Canonical link] · [View PDF link]
+https://doi.org/10.1000/xyz123
 ```
 
 - **Title** — the full canonical title, bold.
 - **Authors** — `Last F` or `Last FM`, no periods, comma separated. Show all of them up to five; beyond that show the first three, then `... N more ...`, then the last two. Consortium and working-group names are never abbreviated.
-- **Metadata** — journal in italics using its NLM abbreviation (single-word titles are never abbreviated: *Nature*, *Science*, *Cell*, *eLife*), then year, then article type (`Journal article`, `Review`, `Preprint`, `Book chapter`), then the citation count with a thousands separator. Separate the fields with ` · `. Omit any field you do not have rather than guessing it — never print `0` or `N/A`. The article type comes from the reference's `type`: library results carry it in `MARKDOWN`, catalog results only in `JSON`.
-- **Canonical link** — A link to the canonical publisher or preprint URL. Prefer the `https://doi.org/...` DOI link if available; otherwise, a preprint or PubMed link is acceptable. Use a Markdown link, with the anchor text one of the following: Website, PubMed, arXiv.
-- **View PDF link** - For references in the user's Paperpile library with a main article PDF, include a PDF viewer link with the format `https://stage-beta.paperpile.com/view/?id=[file_id]`, where file_id is the Paperpile file ID. Make a `get_references_from_library` call with the citekey to get full metadata if the article PDF status is not known.
-
-the canonical `https://doi.org/…` URL as a Markdown link. An arXiv preprint from the last three months may not have reached the DOI resolver yet; use its `https://arxiv.org/abs/…` URL instead. Drop the line if there is neither.
+- **Metadata** — journal in italics using its NLM abbreviation (single-word titles are never abbreviated: *Nature*, *Science*, *Cell*, *eLife*), then year, then article type (`Journal article`, `Review`, `Preprint`, `Book chapter`), then the citation count with a thousands separator (when available; library records usually do not include citation counts unless looked up separately). Separate the fields with ` · `. Omit any field you do not have rather than guessing it — never print `0` or `N/A`.
+- **Links (library papers)** — Join the available Markdown links with ` · ` in this order:
+  1. `[DOI](https://doi.org/...)` (or if the reference has no DOI: `[arXiv](https://arxiv.org/abs/...)`, `[PubMed](https://pubmed.ncbi.nlm.nih.gov/.../)`, or `[URL](...)`).
+  2. `[View in library](...)` using the `library_url` returned by the Paperpile library tools (`https://stage-beta.paperpile.com/my-library/...` or the shared library equivalent).
+  3. `[View PDF](...)` using the viewer link (`https://stage-beta.paperpile.com/view/?id=[file_id]`, plus `&library=[library_id]` for shared libraries) when the reference has a main article PDF. Make a `get_references_from_library` call with the citekey if the article PDF status is not known.
+- **Links (external catalog papers)** — A single raw URL on its own line (not a Markdown link): prefer the canonical `https://doi.org/…` URL. An arXiv preprint from the last three months may not have reached the DOI resolver yet; use its `https://arxiv.org/abs/…` URL instead, or a fallback PubMed/publisher URL. Drop the line if there is no URL.
 
 Put `---` before the first entry and after the last. Separators between entries are optional — use them when the list is long enough to need the visual break.
 
@@ -68,17 +80,13 @@ A comment about a paper goes on its own line after the link, as a `-` bullet.
 
 **Eleven grand challenges in single-cell data science**\
 Lähnemann D, Köster J, Szczurek E ... 14 more ... Schönhuth A, Rahmann S, Schreiber S\
-*Genome Biol* · 2020 · Review · 1,098 citations\
-[Website] · [View PDF]
+*Genome Biol* · 2020 · Review\
+[DOI](https://doi.org/10.1186/s13059-020-1926-6) · [View in library](https://stage-beta.paperpile.com/my-library/Lahnemann2020-sc-p...) · [View PDF](https://stage-beta.paperpile.com/view/?id=...)
 
 - Frames the field's open problems; useful as an anchor for anything downstream of scRNA-seq.
 
 ---
 ```
-
-### Note: citation counts
-
-If you are presenting a small number of papers to the user and you don't already have citation counts available, you can make a quick call to `find_papers` with the DOI of each paper in the query_list to get citation counts.
 
 ## Paperpile PDF links
 
@@ -167,6 +175,7 @@ highlights or notes on that PDF.
 | PDF text only | `pdf:"maximum likelihood"`                | The body text of the PDF                |
 | Exclusion     | `not:review`                              | Drops records containing the word       |
 
+`year:` takes a year (`year:2020`) or its first digits (`year:202` for 2020-2029); a range like `year:2015-2020` is rejected, so search each year.
 The prefixes are `title:`, `author:`, `abstract:`, `journal:`, `year:`, `publisher:` and `pdf:`. There
 are no others. An invented prefix — `note:`, `keyword:`, `doi:` — is not an error; it simply matches
 nothing at all, which looks exactly like an empty library. If a query returns zero results, check that
@@ -184,6 +193,9 @@ strategies below.
 
 ### Other search_library tool parameters
 
+- **`output_format`** selects `MARKDOWN` (default, reference cards with all returned matches), `MINIMAL`
+  (one line per match, with citekey and location but no file ID), or `JSON` (citation metadata grouped
+  with structured matches). Use `JSON` when you need exact file or annotation identifiers.
 - **`search_full_text: false`** turns off PDF text and annotations, leaving only the reference details.
   This is the fix for a query that drags in every paper merely mentioning the term in passing. Remove
   any `pdf:` clause at the same time — the combination is rejected outright, not ignored.
@@ -200,53 +212,61 @@ strategies below.
 
 ### Reading the results
 
-**It does not return a list of papers. It returns a list of matches.** One paper appears many times —
-once for its details, then once per passage found in its PDF, up to five passages per paper. A library
-search for a common term easily returns sixty rows covering ten papers.
+One paper can have several matches: its metadata, passages from its PDF, and highlights or notes.
+The default `MARKDOWN` output groups them under one citation card per reference. `MINIMAL` has one line
+per match, so the same citekey can occur more than once; deduplicate citekeys before counting papers.
 
-**Group by `referenceId` before you present or count anything**, or you will report the same paper over
-and over. Note that these result fields are camelCase, unlike the snake_case parameters going in.
+In `JSON`, each query returns `data: [{ reference, matches }]`. `reference.id` identifies the paper;
+the reference includes its citekey, canonical title, abbreviated authors, journal, publication date
+(`published`), type and available link identifiers. Attachments use the standard `files` objects,
+including their `id`, `name` and `primary` flag. Highlighted fields belong to `matches`, not to that citation metadata.
+An array of queries returns `{ results: [...] }` in input order. Result fields are camelCase,
+unlike the snake_case parameters going in.
 
-Each row has a `resultType`:
+Each match has a `resultType`:
 
 - **`reference_metadata`** — matched on title, authors, year, journal or abstract. `matchedFields` says
   which. Carries the title, authors, year, journal and abstract.
-- **`fulltext`** — matched inside the PDF. Carries `snippet`, `fileId` and `pageNumber`.
-- **`pdf_annotation`** — matched in one of the user's own highlights or notes, plus an `annotationId`.
+- **`fulltext`** — matched inside the PDF. Carries `snippet`, `fileId`, `pageNumber`, and `charOffsets`.
+- **`pdf_annotation`** — matched in the comment on one of the user's own highlights or notes, plus an
+  `annotationId`. The highlighted passage itself isn't searchable, so a highlight without a comment never shows up.
   These are worth calling out when you find them: the user already marked that passage as important.
 
-Two counts, easily confused: `total` is the number of matching _papers_ and only appears when `count`
-asks for it, while `resultCount` is the number of rows returned.
+`total` is the number of matching papers across all pages and only appears when `count` asks for it.
+`resultCount` counts returned matches; `referenceCount` counts distinct references returned on this
+page. A count-only response has a total but no matches — it does not mean nothing matched.
 
 Matched words come back wrapped in `**` inside the text. Strip that before quoting anything.
 
-`fileId` and `pageNumber` are the payoff. They hand straight to `get_text_content` to read the
-surrounding pages, to `highlight_text` to mark the passage permanently, and into a Paperpile deep link
-so the user can click through to that exact spot.
+`fileId`, `pageNumber` and `charOffsets` can be handed straight to `get_text_content` to read the
+surrounding context. Once you have a file ID, page number, and quoted text in hand, you can pass to
+`highlight_text` to mark the passage permanently. Or, create a Paperpile link so the user can click
+through to that exact spot.
 
 ## get_text_content in detail
 
-Name the paper by `citekey` (or `reference_id`) and its main PDF is used; `file_id` picks a specific
-attachment when a reference has several.
+When searching a user's library, `get_text_content` can be useful to extract the text surrounding a search
+result to better understand the context. Or, if you've found a matching paper or section that needs reading
+in more detail, you can fetch a longer stretch of text for deep analysis.
 
-`ranges` takes up to 50 requests in one call, each of them exactly one of:
+Name the paper by `citekey` (or `reference_id`) to extract from the main PDF; `file_id` picks a specific
+attachment.
 
-- `{ "pages": "4-9" }` — page numbers, counting from 1, both ends included. A bare `"7"` is one page.
-- `{ "characters": "3500-3800" }` — counting from 0, the end not included.
-- `{ "all_content": true }` — the whole document.
+`ranges` accepts up to 50 ranges from a given file:
 
-`max_characters` caps the whole response: 20,000 by default, 100,000 at most. It is spent range by
-range in the order you gave them, so a budget too small for the first range leaves the later ones
-empty — `text: ""` with `result_truncated: true`. That reads like a missing page but is not. Ask for
-fewer ranges, or raise the cap.
+- `{ "page": 4, "start": 100, "end": 500 }` — page-local UTF-8 bytes, start inclusive/end exclusive.
+- `{ "page": 4 }` — the whole page.
+- `{ "page_start": 4, "page_end": 9 }` — fetches pages 4 to 9, inclusive (six total pages of text).
+- `{ "page_start": 1, "page_end": 2, "start": 3000, "end": 550 }` — page 1 from byte 3000 onward and the first 550 bytes of page 2.
 
-Only the first 100 pages of any document are extracted. Asking for a page beyond what exists fails with
-an error naming the document's page count, which is in fact the quickest way to find out how long a
-paper is.
+Omit `ranges` to read all available pages. `start` must be zero or more; a negative `end` counts back from that page's end.
 
-Character offsets describe _this one extraction_ of _this one file_. Never store them, never repeat
-them to the user, and never reuse them on a different paper. To record a location permanently, cite the
-page number or leave a highlight.
+For a `fulltext` search hit, pass its `fileId` as `file_id`, `pageNumber` as `page`, and `charOffsets`
+as `start`/`end`. Widen with `Math.max(0, start - context)`: a negative `start` is rejected. For missing offsets or annotation hits, fetch the whole page.
+
+Text is normalized for search, so accents and ligatures may differ from the PDF. These byte offsets
+belong to this extraction and file; use page numbers/passages for citations. Missing extraction
+returns an error unless the host has a compatible fallback. Reading several files takes separate calls.
 
 For papers with no PDF attached, and for downloading PDFs to disk in bulk, see the
 `auto-highlight-papers` skill.
@@ -275,14 +295,11 @@ This is the move that makes the whole skill work, and it is worth doing in this 
 
 1. **`search_library`** finds short passages inside the PDFs — a sentence fragment at a time. Enough to
    tell you _which_ paper and _which_ page, not enough to answer anything.
-2. **`get_text_content`** then reads the surrounding pages in full, so you can see the claim in context,
+2. **`get_text_content`** then reads the surrounding context or full pages, so you can see the claim in context,
    quote it accurately, and check that it says what the fragment suggested.
 
-Search narrows, then reading confirms. Skipping step 2 is the most common way to get this wrong: a
-fifteen-word fragment will happily support a conclusion the full sentence contradicts.
-
-Step 2 is cheap when batched. One `get_text_content` call takes up to 50 page ranges, so the pages you
-located across a dozen papers can all be read in a single call.
+Search finds a narrow match; reading confirms in wider context. `get_text_content` takes up to 50 ranges
+per tool call, so you can parallelize extraction from multiple search results at once.
 
 ### General best practices
 
@@ -340,8 +357,20 @@ the literature before checking in.
 **Quote the papers directly.** A summary in your own words gives the user nothing to check. Use the
 paper's own sentence wherever the exact wording carries the claim — a headline number, a stated
 limitation, the authors saying what their method does or does not do — and give every quote a Paperpile
-link into the PDF at the right page, per the link format appendix below. Add links for specifics you
+link into the PDF at the right page, per the Paperpile PDF links guidance above. Add links for specifics you
 did not quote too: the figure a number came from, the section a method is described in.
+
+**Treat full-text search results as quotes.** When presenting a `fulltext` hit, quote its `snippet` and
+link directly to that passage in the PDF, even in a brief list of search results. Use the hit's `fileId`
+and `pageNumber`, and set the `#hl` fragment to the snippet text you display, stripped of search
+`**` markup and encoded according to the Paperpile PDF links guidance above. Use the matching
+attachment, which may be a supplementary PDF. Prefer these quote links wherever a search excerpt
+helps explain why a paper is relevant; they let the user open and verify the exact passage in one click.
+
+Abstract matches can be quote-linked too when the reference has a PDF. Resolve the PDF attachment's
+ID from the reference's `files` and use the verbatim abstract passage you display as `#hl`, with the
+same markup removal and encoding rules. Include the PDF page when known; an abstract metadata match
+alone does not establish its page number.
 
 **IMPORTANT: Present a reference for each paper contributing to the answer**, formatted in Paperpile style.
 Present each formatted reference when you introduce it for the first time in the response.
@@ -413,3 +442,7 @@ to judge the answer.]
 ```
 
 <End: subagent prompt>
+
+## Feedback
+
+We welcome feedback on Paperpile's tools and skills. To report a bug, friction in a workflow, a feature request, or something that worked well, use the `send_paperpile_feedback` tool — or humans can email support@paperpile.com directly.

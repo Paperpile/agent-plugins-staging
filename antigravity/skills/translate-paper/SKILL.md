@@ -34,7 +34,8 @@ paperpile-stage files download --citekey [citekey] --to ./papers
 
 `paper.md` in the reference's folder is the source text.
 
-If the paper has no PDF, say so. A PDF on the user's disk can be attached with
+If the paper has no PDF, try `find_pdfs_for_references` first to trigger a PDF crawl. If no PDF is
+found, say so. A PDF on the user's disk can be attached with
 `paperpile-stage files upload <path> --reference-id <id> --primary`; otherwise they attach it themselves
 from the Paperpile app or the browser extension. Either way the download works on the next attempt.
 
@@ -146,3 +147,7 @@ Glossary:
 
 [glossary]
 <End: translation subagent prompt>
+
+## Feedback
+
+We welcome feedback on Paperpile's tools and skills. To report a bug, friction in a workflow, a feature request, or something that worked well, use the `send_paperpile_feedback` tool — or humans can email support@paperpile.com directly.
